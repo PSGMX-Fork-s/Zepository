@@ -10,17 +10,13 @@ export default function SendToService() {
 
   const [asset, setAsset] = useState(null);
   const [form, setForm] = useState({
-    sent_date: "",
+    sent_date: new Date().toISOString().split("T")[0],
     service_note: "",
     service_provider: "",
     service_through: "",
   });
 
-  const today = new Date().toISOString().split("T")[0];
-
   useEffect(() => {
-    setForm((current) => ({ ...current, sent_date: today }));
-
     api
       .get(`/assets/${id}`, {
         headers: {
@@ -29,7 +25,7 @@ export default function SendToService() {
       })
       .then((res) => setAsset(res.data.asset))
       .catch(() => alert("Failed to load asset"));
-  }, [id, today]);
+  }, [id]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

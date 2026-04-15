@@ -9,6 +9,7 @@ import AddAsset from "./components/Assets/AddAsset";
 import EditAsset from "./components/Assets/EditAsset";
 import SendToService from "./components/Service/SendToService";
 import UnderService from "./components/Service/ServiceList";
+import LocationsManager from "./components/Locations/LocationsManager";
 
 function App() {
   return (
@@ -79,6 +80,14 @@ function App() {
           element={
             <ProtectedRoute>
               <UnderService />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/locations"
+          element={
+            <ProtectedRoute>
+              <LocationsManager />
             </ProtectedRoute>
           }
         />
