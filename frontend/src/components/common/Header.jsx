@@ -32,6 +32,9 @@ export default function Header({ userName }) {
           <NavLink to="/assets" className={({ isActive }) => navItemClass(isActive)}>
             Assets
           </NavLink>
+          <NavLink to="/locations" className={({ isActive }) => navItemClass(isActive)}>
+            Locations
+          </NavLink>
           <NavLink to="/services" className={({ isActive }) => navItemClass(isActive)}>
             Services
           </NavLink>

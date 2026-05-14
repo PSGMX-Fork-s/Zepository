@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import Header from "../common/Header";
 import Footer from "../common/Footer";
-import { useNavigate } from "react-router-dom";
 
 export default function UnderService() {
   const [list, setList] = useState([]);
@@ -12,8 +11,6 @@ export default function UnderService() {
   const [claimWarranty, setClaimWarranty] = useState("no");
   const [serviceCost, setServiceCost] = useState("");
   const [completionNote, setCompletionNote] = useState("");
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     api

@@ -3,14 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import Header from "../common/Header";
 import Footer from "../common/Footer";
+import useLabsRooms from "../../hooks/useLabsRooms";
 
 export default function EditAsset() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { labs } = useLabsRooms();
 
   const [asset, setAsset] = useState(null);
   const [types, setTypes] = useState([]);
-  const [labs, setLabs] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [savingSection, setSavingSection] = useState(null);
@@ -37,14 +38,12 @@ export default function EditAsset() {
       api.get("/assets/types", {
         headers: { Authorization: "Bearer " + token },
       }),
-      api.get("/labs", { headers: { Authorization: "Bearer " + token } }),
     ])
-      .then(([assetRes, typesRes, labsRes]) => {
+      .then(([assetRes, typesRes]) => {
         const a = assetRes.data.asset;
 
         setAsset(a);
         setTypes(typesRes.data.types || typesRes.data.asset || []);
-        setLabs(labsRes.data.labs || labsRes.data.stats || []);
 
         setBasic({
           asset_type_id: a.asset_type_id,
@@ -140,6 +139,7 @@ export default function EditAsset() {
       alert("Ledger updated");
       navigate(`/assets/${id}`);
     } catch (err) {
+      console.error(err);
       alert("Error updating ledger");
     } finally {
       setSavingSection(null);
@@ -153,6 +153,7 @@ export default function EditAsset() {
       alert("Warranty updated");
       navigate(`/assets/${id}`);
     } catch (err) {
+      console.error(err);
       alert("Error updating warranty");
     } finally {
       setSavingSection(null);
@@ -166,6 +167,7 @@ export default function EditAsset() {
       alert("Specifications updated");
       navigate(`/assets/${id}`);
     } catch (err) {
+      console.error(err);
       alert("Error updating specifications");
     } finally {
       setSavingSection(null);
