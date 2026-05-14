@@ -221,6 +221,7 @@ exports.addAsset = async (req, res) => {
     } = req.body;
 
     const userId = req.user.id; // from JWT middleware
+    const fix = (v) => (v === "" ? null : v);
 
     // ===============================
     // 1) INSERT ASSET
@@ -232,15 +233,15 @@ exports.addAsset = async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       [
-        type_id,
-        brand,
-        model,
-        serial_no,
-        working_status,
-        lab_id,
-        purchase_date,
-        funding_agency,
-        price,
+        fix(type_id),
+        fix(brand),
+        fix(model),
+        fix(serial_no),
+        fix(working_status),
+        fix(lab_id),
+        fix(purchase_date),
+        fix(funding_agency),
+        fix(price),
         userId,
       ]
     );
@@ -256,7 +257,12 @@ exports.addAsset = async (req, res) => {
         INSERT INTO ledger_details (asset_id, serial_no, page_no, created_by)
         VALUES (?, ?, ?, ?)
         `,
-        [assetId, ledger.ledger_serial_no, ledger.page_no, userId]
+        [
+          assetId,
+          fix(ledger.ledger_serial_no),
+          fix(ledger.page_no),
+          userId,
+        ]
       );
     }
 
@@ -267,15 +273,15 @@ exports.addAsset = async (req, res) => {
       await connection.query(
         `
         INSERT INTO warranty_details 
-        (asset_id, vendor_name, vendor_contact, warranty_startdate, warranty_enddate)
-        VALUES (?, ?, ?, ?, ?)
+        (asset_id, vendor_name, vendor_contact, warranty_startdate, warranty_enddate, created_by)
+        VALUES (?, ?, ?, ?, ?, ?)
         `,
         [
           assetId,
-          warranty.vendor_name,
-          warranty.vendor_contact,
-          warranty.warranty_startdate,
-          warranty.warranty_enddate,
+          fix(warranty.vendor_name),
+          fix(warranty.vendor_contact),
+          fix(warranty.warranty_startdate),
+          fix(warranty.warranty_enddate),
           userId,
         ]
       );
@@ -293,7 +299,7 @@ exports.addAsset = async (req, res) => {
           INSERT INTO asset_specs (asset_id, spec_key, spec_value, unit, created_by)
           VALUES (?, ?, ?, ?, ?)
           `,
-          [assetId, s.spec_key, s.spec_value, s.unit, userId]
+          [assetId, fix(s.spec_key), fix(s.spec_value), fix(s.unit), userId]
         );
       }
     }
