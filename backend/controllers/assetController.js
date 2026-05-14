@@ -70,6 +70,7 @@ exports.getAssetById = async (req, res) => {
         ad.brand,
         ad.model,
         ad.working_status,
+        ad.lab_id,
         
         lab.lab_name,
         

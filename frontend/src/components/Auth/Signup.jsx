@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "../../services/api";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export default function Signup() {
               type="text"
               name="user_name"
               placeholder="Name"
-              value={form.name}
+              value={form.user_name}
               onChange={handleChange}
               className="p-2.5 rounded-lg border border-gray-300 outline-none focus:outline-gray-300"
             />
@@ -93,7 +93,14 @@ export default function Signup() {
         </div>
 
         <p className="absolute bottom-5">
-          Already have an account? <Link to="/login">Login here</Link>
+          Already have an account? 
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="text-blue-600 underline hover:text-blue-800"
+          >
+            Login here
+          </button>
         </p>
       </div>
     </div>

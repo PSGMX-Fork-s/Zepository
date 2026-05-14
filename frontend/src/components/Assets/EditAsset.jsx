@@ -52,7 +52,7 @@ export default function EditAsset() {
           model: a.model,
           serial_no: a.serial_no,
           working_status: a.working_status,
-          lab_id: a.lab_id,
+          lab_id: a.lab_id ? String(a.lab_id) : "",
           purchase_date: formatDate(a.purchase_date),
           funding_agency: a.funding_agency,
           price: a.price,
@@ -112,10 +112,17 @@ export default function EditAsset() {
     headers: { Authorization: "Bearer " + localStorage.getItem("token") },
   };
 
+  const isUnderService = asset?.working_status === "under_service";
+
   const saveBasic = async () => {
     setSavingSection("basic");
     try {
-      await api.put(`/assets/${id}`, { basic: basic }, tokenHeader);
+      const payload = {
+        ...basic,
+        working_status: isUnderService ? asset.working_status : basic.working_status,
+      };
+
+      await api.put(`/assets/${id}`, { basic: payload }, tokenHeader);
       alert("Basic details updated");
       navigate(`/assets/${id}`);
     } catch (err) {
@@ -251,13 +258,18 @@ export default function EditAsset() {
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
                 <select
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                  disabled={isUnderService}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 disabled:cursor-not-allowed disabled:opacity-60"
                   value={basic.working_status}
                   onChange={(e) => setBasic({ ...basic, working_status: e.target.value })}
                 >
                   <option value="working">Working</option>
                   <option value="defective">Defective</option>
+                  <option value="under_service">Under Service</option>
                 </select>
+                {isUnderService && (
+                  <p className="mt-2 text-xs text-slate-500">Working status cannot be changed while the asset is under service.</p>
+                )}
               </div>
 
               <div>
@@ -269,7 +281,7 @@ export default function EditAsset() {
                 >
                   <option value="">Select Lab</option>
                   {labs.map((l) => (
-                    <option key={l.lab_id} value={l.lab_id}>{l.lab_name}</option>
+                  <option key={l.lab_id} value={String(l.lab_id)}>{l.lab_name}</option>
                   ))}
                 </select>
               </div>
