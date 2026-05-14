@@ -70,6 +70,7 @@ exports.getAssetById = async (req, res) => {
         ad.brand,
         ad.model,
         ad.working_status,
+        ad.lab_id,
         
         lab.lab_name,
         
@@ -254,14 +255,13 @@ exports.addAsset = async (req, res) => {
     if (ledger) {
       await connection.query(
         `
-        INSERT INTO ledger_details (asset_id, serial_no, page_no, created_by)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO ledger_details (asset_id, serial_no, page_no)
+        VALUES (?, ?, ?)
         `,
         [
           assetId,
           fix(ledger.ledger_serial_no),
           fix(ledger.page_no),
-          userId,
         ]
       );
     }
@@ -273,8 +273,8 @@ exports.addAsset = async (req, res) => {
       await connection.query(
         `
         INSERT INTO warranty_details 
-        (asset_id, vendor_name, vendor_contact, warranty_startdate, warranty_enddate, created_by)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (asset_id, vendor_name, vendor_contact, warranty_startdate, warranty_enddate)
+        VALUES (?, ?, ?, ?, ?)
         `,
         [
           assetId,
@@ -282,7 +282,6 @@ exports.addAsset = async (req, res) => {
           fix(warranty.vendor_contact),
           fix(warranty.warranty_startdate),
           fix(warranty.warranty_enddate),
-          userId,
         ]
       );
     }
@@ -296,10 +295,10 @@ exports.addAsset = async (req, res) => {
 
         await connection.query(
           `
-          INSERT INTO asset_specs (asset_id, spec_key, spec_value, unit, created_by)
-          VALUES (?, ?, ?, ?, ?)
+          INSERT INTO asset_specs (asset_id, spec_key, spec_value, unit)
+          VALUES (?, ?, ?, ?)
           `,
-          [assetId, fix(s.spec_key), fix(s.spec_value), fix(s.unit), userId]
+          [assetId, fix(s.spec_key), fix(s.spec_value), fix(s.unit)]
         );
       }
     }
@@ -397,13 +396,12 @@ exports.updateAsset = async (req, res) => {
         );
       } else {
         await connection.query(
-          `INSERT INTO ledger_details (asset_id, serial_no, page_no, created_by) 
-           VALUES (?, ?, ?, ?)`,
+          `INSERT INTO ledger_details (asset_id, serial_no, page_no) 
+           VALUES (?, ?, ?)`,
           [
             assetId,
             fix(ledger.ledger_serial_no),
             fix(ledger.page_no),
-            userId,
           ]
         );
       }
@@ -436,15 +434,14 @@ exports.updateAsset = async (req, res) => {
       } else {
         await connection.query(
           `INSERT INTO warranty_details 
-           (asset_id, vendor_name, vendor_contact, warranty_startdate, warranty_enddate, created_by) 
-           VALUES (?, ?, ?, ?, ?, ?)`,
+           (asset_id, vendor_name, vendor_contact, warranty_startdate, warranty_enddate) 
+           VALUES (?, ?, ?, ?, ?)`,
           [
             assetId,
             fix(warranty.vendor_name),
             fix(warranty.vendor_contact),
             fix(warranty.warranty_startdate),
             fix(warranty.warranty_enddate),
-            userId,
           ]
         );
       }
@@ -461,8 +458,8 @@ exports.updateAsset = async (req, res) => {
 
       if (specs.length > 0) {
         const sql = `INSERT INTO asset_specs 
-          (asset_id, spec_key, spec_value, unit, created_by)
-          VALUES (?, ?, ?, ?, ?)`;
+          (asset_id, spec_key, spec_value, unit)
+          VALUES (?, ?, ?, ?)`;
 
         for (const s of specs) {
           if (!s.spec_key && !s.spec_value) continue;
@@ -472,7 +469,6 @@ exports.updateAsset = async (req, res) => {
             s.spec_key,
             s.spec_value,
             fix(s.unit),
-            userId,
           ]);
         }
       }

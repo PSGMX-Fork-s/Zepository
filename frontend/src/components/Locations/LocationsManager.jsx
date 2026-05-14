@@ -2,32 +2,13 @@ import { useState } from "react";
 import Header from "../common/Header";
 import Footer from "../common/Footer";
 import LabForm from "../forms/LabForm";
-import RoomForm from "../forms/RoomForm";
 import useLabsRooms from "../../hooks/useLabsRooms";
 
-const formatLabSubtitle = (lab) => {
-  const details = [];
-
-  if (lab.building) {
-    details.push(lab.building);
-  }
-
-  if (lab.capacity) {
-    details.push(`Capacity ${lab.capacity}`);
-  }
-
-  return details.join(" • ");
-};
-
-const formatRoomSubtitle = (room) => {
-  const details = [room.type, room.block, room.capacity ? `Capacity ${room.capacity}` : ""];
-  return details.filter(Boolean).join(" • ");
-};
-
 export default function LocationsManager() {
-  const { labs, rooms, addLab, addRoom, isLoading, error } = useLabsRooms();
+  const { labs, addLab, editLab, removeLab, isLoading, error } = useLabsRooms();
   const [isCreatingLab, setIsCreatingLab] = useState(false);
-  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [editingLabId, setEditingLabId] = useState(null);
+  const [isEditingLab, setIsEditingLab] = useState(false);
 
   const handleAddLab = async (payload) => {
     setIsCreatingLab(true);
@@ -38,12 +19,22 @@ export default function LocationsManager() {
     }
   };
 
-  const handleAddRoom = async (payload) => {
-    setIsCreatingRoom(true);
+  const handleEditLab = async (payload) => {
+    setIsEditingLab(true);
     try {
-      await addRoom(payload);
+      await editLab(editingLabId, payload);
+      setEditingLabId(null);
     } finally {
-      setIsCreatingRoom(false);
+      setIsEditingLab(false);
+    }
+  };
+
+  const handleDeleteLab = async (labId) => {
+    if (!window.confirm("Are you sure you want to delete this lab?")) return;
+    try {
+      await removeLab(labId);
+    } catch (err) {
+      alert(err.message);
     }
   };
 
@@ -57,12 +48,8 @@ export default function LocationsManager() {
             Location Directory
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight">
-            Manage Labs and Rooms
+            Manage Labs
           </h1>
-          <p className="mt-4 max-w-3xl text-slate-300">
-            Add new labs and rooms through one shared data layer. Labs are synced
-            with the backend, while room records are persisted locally for instant reuse.
-          </p>
         </section>
 
         {error && (
@@ -71,45 +58,7 @@ export default function LocationsManager() {
           </section>
         )}
 
-        <section className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="border-b border-slate-100 pb-4">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
-                Create Lab
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold text-slate-900">
-                Add a backend-backed lab
-              </h2>
-            </div>
-            <div className="mt-6">
-              <LabForm
-                existingLabs={labs}
-                onSubmit={handleAddLab}
-                isSubmitting={isCreatingLab}
-              />
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="border-b border-slate-100 pb-4">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
-                Create Room
-              </p>
-              <h2 className="mt-3 text-2xl font-semibold text-slate-900">
-                Add a persistent room record
-              </h2>
-            </div>
-            <div className="mt-6">
-              <RoomForm
-                existingRooms={rooms}
-                onSubmit={handleAddRoom}
-                isSubmitting={isCreatingRoom}
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-2">
+        <section className="grid gap-6">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
@@ -117,7 +66,7 @@ export default function LocationsManager() {
                   Labs
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold text-slate-900">
-                  Current lab inventory
+                  Existing Labs
                 </h2>
               </div>
               <span className="rounded-full bg-cyan-100 px-4 py-2 text-sm font-semibold text-cyan-700">
@@ -128,69 +77,66 @@ export default function LocationsManager() {
             <div className="mt-6 space-y-4">
               {isLoading ? (
                 <p className="text-sm text-slate-500">Loading labs...</p>
+              ) : labs.length === 0 ? (
+                <p className="text-sm text-slate-500">No labs created yet. Add one using the form below.</p>
               ) : (
                 labs.map((lab) => (
                   <article
                     key={lab.lab_id}
-                    className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4"
+                    className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5"
                   >
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {lab.lab_name}
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-500">
-                      {formatLabSubtitle(lab) || "Additional details not provided yet."}
-                    </p>
-                    {lab.metadata && (
-                      <p className="mt-3 text-sm leading-6 text-slate-600">
-                        {lab.metadata}
-                      </p>
+                    {editingLabId === lab.lab_id ? (
+                      <LabForm
+                        existingLabs={labs}
+                        onSubmit={handleEditLab}
+                        isSubmitting={isEditingLab}
+                        initialData={lab}
+                        onCancel={() => setEditingLabId(null)}
+                      />
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          {lab.lab_name}
+                        </h3>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setEditingLabId(lab.lab_id)}
+                            className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-300 transition"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLab(lab.lab_id)}
+                            className="rounded-full bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-200 transition"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </article>
                 ))
               )}
             </div>
           </div>
+        </section>
 
+        <section className="grid gap-6">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
-                  Rooms
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold text-slate-900">
-                  Saved room directory
-                </h2>
-              </div>
-              <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                {rooms.length}
-              </span>
+            <div className="border-b border-slate-100 pb-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
+                Create Lab
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold text-slate-900">
+                Add a Lab
+              </h2>
             </div>
-
-            <div className="mt-6 space-y-4">
-              {rooms.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No rooms created yet. Add one using the form above.
-                </p>
-              ) : (
-                rooms.map((room) => (
-                  <article
-                    key={room.id}
-                    className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4"
-                  >
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {room.name}
-                    </h3>
-                    <p className="mt-2 text-sm text-slate-500">
-                      {formatRoomSubtitle(room)}
-                    </p>
-                    {room.metadata && (
-                      <p className="mt-3 text-sm leading-6 text-slate-600">
-                        {room.metadata}
-                      </p>
-                    )}
-                  </article>
-                ))
-              )}
+            <div className="mt-6">
+              <LabForm
+                existingLabs={labs}
+                onSubmit={handleAddLab}
+                isSubmitting={isCreatingLab}
+              />
             </div>
           </div>
         </section>

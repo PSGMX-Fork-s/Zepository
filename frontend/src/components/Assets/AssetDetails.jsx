@@ -43,6 +43,11 @@ export default function AssetDetails() {
     return "bg-slate-100 text-slate-800";
   };
 
+  const totalServiceCost = asset.services?.reduce(
+    (sum, service) => sum + Number(service?.service_cost || 0),
+    0
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Header />
@@ -212,7 +217,12 @@ export default function AssetDetails() {
           <h2 className="text-xs uppercase tracking-widest font-bold text-slate-400 mb-6">Service History</h2>
 
           {asset.services && asset.services.length > 0 ? (
-            <div className="space-y-4">
+            <>
+              <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-500">Total Service Cost</p>
+                <p className="text-lg font-bold text-slate-900">₹{totalServiceCost}</p>
+              </div>
+              <div className="space-y-4">
               {asset.services.map((service) => (
                 <div key={service.service_id} className="rounded-xl border border-slate-100 bg-slate-50 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -243,6 +253,7 @@ export default function AssetDetails() {
                 </div>
               ))}
             </div>
+            </>
           ) : (
             <p className="text-sm text-slate-500">This asset has never been sent for service.</p>
           )}

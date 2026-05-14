@@ -13,7 +13,7 @@ const LabsRoomsContext = createContext(null);
 
 const readStoredState = () => {
   if (typeof window === "undefined") {
-    return { customLabs: [], rooms: [] };
+    return { customLabs: [] };
   }
 
   try {
@@ -21,10 +21,9 @@ const readStoredState = () => {
 
     return {
       customLabs: Array.isArray(parsed.customLabs) ? parsed.customLabs : [],
-      rooms: Array.isArray(parsed.rooms) ? parsed.rooms : [],
     };
   } catch {
-    return { customLabs: [], rooms: [] };
+    return { customLabs: [] };
   }
 };
 
@@ -38,11 +37,6 @@ const createId = (prefix) => {
 
 const normalizeLab = (lab) => {
   const id = String(lab.lab_id ?? lab.id ?? createId("lab"));
-  const building = lab.building?.trim() || lab.block?.trim() || "";
-  const metadata = typeof lab.metadata === "string" ? lab.metadata.trim() : "";
-  const capacityValue = Number(lab.capacity);
-  const capacity =
-    Number.isFinite(capacityValue) && capacityValue > 0 ? capacityValue : null;
 
   return {
     ...lab,
@@ -50,28 +44,6 @@ const normalizeLab = (lab) => {
     lab_id: id,
     name: lab.name?.trim() || lab.lab_name?.trim() || "",
     lab_name: lab.lab_name?.trim() || lab.name?.trim() || "",
-    building,
-    block: building,
-    metadata,
-    capacity,
-  };
-};
-
-const normalizeRoom = (room) => {
-  const id = String(room.id ?? createId("room"));
-  const capacityValue = Number(room.capacity);
-  const capacity =
-    Number.isFinite(capacityValue) && capacityValue > 0 ? capacityValue : null;
-
-  return {
-    ...room,
-    id,
-    name: room.name?.trim() || room.room_name?.trim() || "",
-    room_name: room.room_name?.trim() || room.name?.trim() || "",
-    type: room.type?.trim() || "",
-    block: room.block?.trim() || room.building?.trim() || "",
-    metadata: typeof room.metadata === "string" ? room.metadata.trim() : "",
-    capacity,
   };
 };
 
@@ -97,9 +69,6 @@ export function LabsRoomsProvider({ children }) {
   const [customLabs, setCustomLabs] = useState(() =>
     readStoredState().customLabs.map(normalizeLab)
   );
-  const [rooms, setRooms] = useState(() =>
-    readStoredState().rooms.map(normalizeRoom)
-  );
   const [isLoading, setIsLoading] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -116,9 +85,9 @@ export function LabsRoomsProvider({ children }) {
 
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ customLabs, rooms })
+      JSON.stringify({ customLabs })
     );
-  }, [customLabs, rooms]);
+  }, [customLabs]);
 
   useEffect(() => {
     let isActive = true;
@@ -167,19 +136,14 @@ export function LabsRoomsProvider({ children }) {
   const addLab = async (input) => {
     const nextLab = normalizeLab({
       name: input.name,
-      capacity: input.capacity,
-      building: input.building,
-      metadata: input.metadata,
     });
 
     const duplicate = labs.some(
-      (lab) =>
-        lab.lab_name.toLowerCase() === nextLab.lab_name.toLowerCase() &&
-        lab.building.toLowerCase() === nextLab.building.toLowerCase()
+      (lab) => lab.lab_name.toLowerCase() === nextLab.lab_name.toLowerCase()
     );
 
     if (duplicate) {
-      throw new Error("A lab with the same name and block/building already exists.");
+      throw new Error("A lab with the same name already exists.");
     }
 
     const token = window.localStorage.getItem("token");
@@ -187,9 +151,6 @@ export function LabsRoomsProvider({ children }) {
       "/labs",
       {
         name: nextLab.lab_name,
-        capacity: nextLab.capacity,
-        building: nextLab.building,
-        metadata: nextLab.metadata,
       },
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -214,35 +175,61 @@ export function LabsRoomsProvider({ children }) {
     return savedLab;
   };
 
-  const addRoom = async (input) => {
-    const nextRoom = normalizeRoom({
-      id: createId("room"),
+  const editLab = async (id, input) => {
+    const nextLab = normalizeLab({
+      id,
       name: input.name,
-      capacity: input.capacity,
-      type: input.type,
-      block: input.block,
-      metadata: input.metadata,
     });
 
-    const duplicate = rooms.some(
-      (room) =>
-        room.name.toLowerCase() === nextRoom.name.toLowerCase() &&
-        room.block.toLowerCase() === nextRoom.block.toLowerCase()
+    const duplicate = labs.some(
+      (lab) => String(lab.lab_id) !== String(id) && lab.lab_name.toLowerCase() === nextLab.lab_name.toLowerCase()
     );
 
     if (duplicate) {
-      throw new Error("A room with the same name/number and block already exists.");
+      throw new Error("Another lab with this name already exists.");
     }
 
-    setRooms((current) => [...current, nextRoom]);
-    return nextRoom;
+    const token = window.localStorage.getItem("token");
+    await api.put(
+      `/labs/${id}`,
+      {
+        name: nextLab.lab_name,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    setCustomLabs((current) => {
+      return current.map(lab => String(lab.lab_id) === String(id) ? { ...lab, ...nextLab } : lab);
+    });
+
+    setBackendLabs((current) => {
+      return current.map(lab => String(lab.lab_id) === String(id) ? { ...lab, ...nextLab } : lab);
+    });
+
+    return nextLab;
+  };
+
+  const removeLab = async (id) => {
+    const token = window.localStorage.getItem("token");
+    try {
+      await api.delete(`/labs/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      throw new Error(err.response?.data?.message || "Failed to delete lab");
+    }
+
+    setCustomLabs((current) => current.filter(lab => String(lab.lab_id) !== String(id)));
+    setBackendLabs((current) => current.filter(lab => String(lab.lab_id) !== String(id)));
   };
 
   const value = {
     labs,
-    rooms,
     addLab,
-    addRoom,
+    editLab,
+    removeLab,
     isLoading,
     error,
   };

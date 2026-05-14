@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "../../services/api";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -48,6 +48,7 @@ export default function Login() {
             <input
               name="email"
               placeholder="Email"
+              value={form.email}
               onChange={handleChange}
               className="p-2.5 rounded-lg border border-gray-300 outline-none focus:outline-gray-300"
             />
@@ -56,16 +57,23 @@ export default function Login() {
               name="password"
               type="password"
               placeholder="Password"
+              value={form.password}
               onChange={handleChange}
               className="p-2.5 rounded-lg border border-gray-300 outline-none focus:outline-gray-300"
             />
 
-            <button className="p-2.5 rounded-lg border-none bg-black text-white cursor-pointer">Login</button>
+            <button type="submit" className="p-2.5 rounded-lg border-none bg-black text-white cursor-pointer">Login</button>
           </form>
 
           <div className="text-center">
             <p>
-              <Link to="/signup">Click here</Link> to create new account
+              <button
+                type="button"
+                onClick={() => navigate("/signup")}
+                className="text-blue-600 underline hover:text-blue-800"
+              >
+                Click here
+              </button> to create new account
             </p>
           </div>
         </div>
